@@ -510,8 +510,18 @@ const updateProfile = async (req, res) => {
         avatarUrl = `http://localhost:5000/uploads/${req.file.filename}`;
       }
       
+      // Vérifier que le fichier existe bien
+      const fs = require('fs');
+      const filePath = path.join(uploadDir, req.file.filename);
+      if (fs.existsSync(filePath)) {
+        const stats = fs.statSync(filePath);
+        console.log(`✅ Fichier uploadé avec succès: ${req.file.filename} (${stats.size} bytes)`);
+      } else {
+        console.error(`❌ ERREUR: Le fichier n'existe pas après upload: ${filePath}`);
+      }
+      
       user.avatar = avatarUrl;
-      console.log(`✅ Avatar uploadé: ${avatarUrl}`);
+      console.log(`✅ Avatar URL: ${avatarUrl}`);
     }
 
     await user.save();

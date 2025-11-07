@@ -175,13 +175,28 @@ app.use('/uploads', (req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Log pour debug (à retirer en production si nécessaire)
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`📤 Requête pour fichier: ${req.path}`);
+  }
+  
   next();
 }, express.static(uploadsPath, {
   // Options pour servir les fichiers statiques
   maxAge: '1d', // Cache les fichiers pendant 1 jour
   etag: true,
-  lastModified: true
-}));
+  lastModified: true,
+  // Gérer les erreurs 404
+  fallthrough: false
+}), (req, res) => {
+  // Si le fichier n'est pas trouvé
+  console.warn(`⚠️ Fichier non trouvé: ${req.path}`);
+  res.status(404).json({
+    error: 'Fichier non trouvé',
+    path: req.path
+  });
+});
 
 // Log pour debug
 console.log(`📁 Uploads directory: ${uploadsPath}`);
@@ -215,6 +230,29 @@ app.get('/api/test', (req, res) => {
     message: 'API FormationPro - Test réussi!',
     timestamp: new Date().toISOString()
   });
+});
+
+// Route de test pour vérifier les uploads
+app.get('/api/test-uploads', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const uploadsPath = path.join(__dirname, '../../uploads');
+  
+  try {
+    const files = fs.readdirSync(uploadsPath);
+    res.json({
+      success: true,
+      uploadsPath: uploadsPath,
+      filesCount: files.length,
+      files: files.slice(0, 10) // Limiter à 10 fichiers pour la réponse
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      uploadsPath: uploadsPath
+    });
+  }
 });
 
 // ===== GESTION D'ERREURS =====

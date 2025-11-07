@@ -75,7 +75,25 @@ export const isValidImageUrl = async (url) => {
  * @param {string} genre - Genre pour l'avatar par défaut
  */
 export const handleImageError = (event, genre = 'male') => {
-  console.warn('Image failed to load:', event.target.src);
+  const failedUrl = event.target.src;
+  console.warn('❌ Image failed to load:', failedUrl);
+  
+  // Essayer de diagnostiquer le problème
+  if (failedUrl.includes('localhost')) {
+    console.warn('⚠️ URL contient localhost - devrait être corrigée automatiquement');
+  }
+  
+  if (failedUrl.includes('http://')) {
+    console.warn('⚠️ URL utilise HTTP au lieu de HTTPS');
+  }
+  
+  // Vérifier si l'URL est tronquée (pas d'extension)
+  const urlParts = failedUrl.split('.');
+  if (urlParts.length === 1 || !['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].some(ext => failedUrl.toLowerCase().endsWith('.' + ext))) {
+    console.warn('⚠️ URL semble tronquée ou sans extension valide');
+  }
+  
+  // Utiliser l'avatar par défaut
   event.target.src = genre === 'female' 
     ? '/photos/avatar-female-default.svg' 
     : '/photos/avatar-male-default.svg';
