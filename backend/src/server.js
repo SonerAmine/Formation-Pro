@@ -35,39 +35,85 @@ const PORT = process.env.PORT || 5000;
 // Connexion à la base de données
 connectDB();
 
+// ===== CONFIGURATION POUR RENDER (TRUST PROXY) =====
+// Render utilise un proxy, il faut faire confiance aux headers X-Forwarded-*
+app.set('trust proxy', 1);
+
 // ===== MIDDLEWARES DE SÉCURITÉ =====
 
 // Helmet pour sécuriser les headers HTTP
+// Configuration ajustée pour Google OAuth
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: { policy: "unsafe-none" } // Nécessaire pour Google OAuth popup
 }));
 
-// Configuration CORS
+// Configuration CORS améliorée
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      process.env.FRONTEND_URL || 'http://localhost:3000',
+    // Construire la liste des origines autorisées
+    const allowedOrigins = [];
+    
+    // Ajouter l'URL du frontend depuis les variables d'environnement
+    if (process.env.FRONTEND_URL) {
+      allowedOrigins.push(process.env.FRONTEND_URL);
+      // Ajouter aussi sans le trailing slash si présent
+      if (process.env.FRONTEND_URL.endsWith('/')) {
+        allowedOrigins.push(process.env.FRONTEND_URL.slice(0, -1));
+      } else {
+        allowedOrigins.push(process.env.FRONTEND_URL + '/');
+      }
+    }
+    
+    // Ajouter les origines de développement
+    allowedOrigins.push(
       'http://localhost:3000',
-      'http://127.0.0.1:3000'
-    ];
+      'http://127.0.0.1:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3001'
+    );
     
-    // Permettre les requêtes sans origin (ex: applications mobile, Postman)
-    if (!origin) return callback(null, true);
+    // En production sur Render, permettre toutes les URLs *.onrender.com (pour flexibilité)
+    if (process.env.NODE_ENV === 'production') {
+      // Si l'origine est une URL Render, l'autoriser
+      if (origin && origin.includes('.onrender.com')) {
+        return callback(null, true);
+      }
+    }
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Permettre les requêtes sans origin (ex: applications mobile, Postman, curl, server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // Vérifier si l'origine est exactement dans la liste autorisée
+    const isAllowed = allowedOrigins.includes(origin);
+    
+    if (isAllowed) {
       callback(null, true);
     } else {
-      callback(new Error('Non autorisé par CORS'));
+      // Log pour debug
+      console.log(`🌐 Requête CORS depuis: ${origin}`);
+      console.log(`✅ Origines autorisées:`, allowedOrigins);
+      console.log(`🔧 FRONTEND_URL:`, process.env.FRONTEND_URL);
+      // Autoriser quand même si c'est une URL Render en production (pour éviter les problèmes)
+      if (process.env.NODE_ENV === 'production' && origin && origin.includes('.onrender.com')) {
+        console.log(`✅ Autorisation automatique pour Render: ${origin}`);
+        return callback(null, true);
+      }
+      callback(new Error(`Non autorisé par CORS. Origin: ${origin}`));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Authorization'],
+  maxAge: 86400 // 24 heures
 };
 
 app.use(cors(corsOptions));
 
-// Rate limiting
+// Rate limiting avec configuration pour Render (trust proxy)
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // Limite chaque IP à 100 requêtes par windowMs
@@ -76,6 +122,12 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Configurer pour Render (utilise X-Forwarded-For)
+  trustProxy: true,
+  skip: (req) => {
+    // Skip rate limiting pour les health checks
+    return req.path === '/health' || req.path === '/api/test';
+  }
 });
 
 app.use(limiter);
@@ -88,6 +140,8 @@ const authLimiter = rateLimit({
     error: 'Trop de tentatives de connexion, veuillez réessayer dans 15 minutes.'
   },
   skipSuccessfulRequests: true,
+  // Configurer pour Render (utilise X-Forwarded-For)
+  trustProxy: true
 });
 
 // ===== MIDDLEWARES GÉNÉRAUX =====
