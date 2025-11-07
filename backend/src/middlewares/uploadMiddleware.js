@@ -3,9 +3,13 @@ const path = require('path');
 const fs = require('fs');
 
 // Créer le dossier uploads s'il n'existe pas
-const uploadDir = 'uploads';
+// Utiliser un chemin absolu pour fonctionner sur Render
+const uploadDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
+  console.log(`📁 Dossier uploads créé: ${uploadDir}`);
+} else {
+  console.log(`📁 Dossier uploads existe: ${uploadDir}`);
 }
 
 // Configuration du stockage

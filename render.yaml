@@ -1,0 +1,58 @@
+# Configuration Render pour FormationPro
+# Ce fichier peut être utilisé pour configurer les services via l'interface Render
+# OU vous pouvez suivre le guide manuel dans RENDER_DEPLOYMENT_GUIDE.md
+
+services:
+  # Service Backend (Web Service)
+  - type: web
+    name: formationpro-backend
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm start
+    rootDir: backend
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false  # À configurer manuellement dans le dashboard
+      - key: JWT_SECRET
+        sync: false  # À configurer manuellement
+      - key: JWT_REFRESH_SECRET
+        sync: false  # À configurer manuellement
+      - key: FRONTEND_URL
+        sync: false  # À mettre à jour après création du frontend
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "100"
+      - key: BCRYPT_SALT_ROUNDS
+        value: "12"
+      - key: JWT_EXPIRES_IN
+        value: "7d"
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: "30d"
+
+  # Service Frontend (Static Site)
+  - type: web
+    name: formationpro-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    rootDir: frontend
+    envVars:
+      - key: REACT_APP_API_URL
+        sync: false  # À configurer avec l'URL du backend
+      - key: REACT_APP_APP_NAME
+        value: "FormationPro"
+      - key: REACT_APP_GOOGLE_CLIENT_ID
+        sync: false  # Optionnel
+      - key: GENERATE_SOURCEMAP
+        value: "false"
+      - key: NODE_VERSION
+        value: "18"
+

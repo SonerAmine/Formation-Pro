@@ -87,14 +87,32 @@ const Profile = () => {
       
       if (response.data.success) {
         console.log('✅ Profile update response:', response.data.user);
-        updateUser(response.data.user);
+        const updatedUser = response.data.user;
+        
+        // Mettre à jour l'utilisateur dans le contexte
+        updateUser(updatedUser);
+        
+        // Mettre à jour le preview de l'image
+        if (updatedUser.avatar) {
+          const avatarUrl = getAvatarUrl(updatedUser.avatar, updatedUser.genre || formData.genre);
+          setImagePreview(avatarUrl);
+          console.log('✅ Avatar URL mise à jour:', avatarUrl);
+        } else {
+          // Si pas d'avatar, utiliser l'avatar par défaut
+          setImagePreview(getAvatarUrl(null, updatedUser.genre || formData.genre));
+        }
+        
         setMessage({ type: 'success', text: 'Profil mis à jour avec succès !' });
         setSelectedFile(null); // Reset selected file
         
-        // Force re-render of image preview
-        if (response.data.user.avatar) {
-          setImagePreview(getAvatarUrl(response.data.user.avatar, response.data.user.genre));
-        }
+        // Mettre à jour les données du formulaire
+        setFormData(prev => ({
+          ...prev,
+          nom: updatedUser.nom || prev.nom,
+          prenom: updatedUser.prenom || prev.prenom,
+          telephone: updatedUser.telephone || prev.telephone,
+          genre: updatedUser.genre || prev.genre
+        }));
       }
     } catch (error) {
       setMessage({ 

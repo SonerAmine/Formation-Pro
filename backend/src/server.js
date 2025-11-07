@@ -164,8 +164,27 @@ app.use(express.json({
 // Parser URL-encoded
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Servir les fichiers statiques
-app.use('/uploads', express.static('uploads'));
+// Servir les fichiers statiques (avatars uploadés)
+// Le chemin doit être absolu pour fonctionner sur Render
+const path = require('path');
+const uploadsPath = path.join(__dirname, '../../uploads');
+
+// Middleware pour servir les fichiers statiques avec les bons headers
+app.use('/uploads', (req, res, next) => {
+  // Ajouter les headers CORS pour les images
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+}, express.static(uploadsPath, {
+  // Options pour servir les fichiers statiques
+  maxAge: '1d', // Cache les fichiers pendant 1 jour
+  etag: true,
+  lastModified: true
+}));
+
+// Log pour debug
+console.log(`📁 Uploads directory: ${uploadsPath}`);
 
 // ===== ROUTES =====
 

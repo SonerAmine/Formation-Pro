@@ -58,6 +58,8 @@ const register = async (req, res) => {
         email: user.email,
         telephone: user.telephone,
         role: user.role,
+        genre: user.genre,
+        avatar: user.avatar,
         favoris: user.favoris,
         offresSpeciales: user.offresSpeciales
       }
@@ -138,6 +140,8 @@ const login = async (req, res) => {
         email: user.email,
         telephone: user.telephone,
         role: user.role,
+        genre: user.genre,
+        avatar: user.avatar,
         favoris: user.favoris,
         offresSpeciales: user.offresSpeciales,
         lastLogin: user.lastLogin
@@ -191,6 +195,8 @@ const getProfile = async (req, res) => {
         email: user.email,
         telephone: user.telephone,
         role: user.role,
+        genre: user.genre,
+        avatar: user.avatar,
         favoris: user.favoris,
         offresSpeciales: user.offresSpeciales,
         lastLogin: user.lastLogin,
@@ -453,18 +459,40 @@ const updateProfile = async (req, res) => {
 
     // Gérer l'upload d'avatar
     if (req.file) {
+      const fs = require('fs');
+      const path = require('path');
+      
       // Supprimer l'ancien avatar s'il existe
-      if (user.avatar && !user.avatar.includes('avatar-') && !user.avatar.includes('default')) {
-        const fs = require('fs');
-        const path = require('path');
-        const oldAvatarPath = path.join('uploads', user.avatar);
-        if (fs.existsSync(oldAvatarPath)) {
-          fs.unlinkSync(oldAvatarPath);
+      if (user.avatar) {
+        // Si l'avatar est un chemin local, le supprimer
+        if (user.avatar.includes('avatar-') && !user.avatar.startsWith('http')) {
+          const oldAvatarPath = path.join('uploads', user.avatar.replace(/^.*\//, ''));
+          if (fs.existsSync(oldAvatarPath)) {
+            try {
+              fs.unlinkSync(oldAvatarPath);
+              console.log(`🗑️ Ancien avatar supprimé: ${oldAvatarPath}`);
+            } catch (err) {
+              console.warn(`⚠️ Impossible de supprimer l'ancien avatar: ${err.message}`);
+            }
+          }
         }
       }
       
-      // Mettre à jour avec l'URL complète
-      user.avatar = `${process.env.FRONTEND_URL?.replace('3000', '5000') || 'http://localhost:5000'}/uploads/${req.file.filename}`;
+      // Construire l'URL de l'avatar
+      // Sur Render, utiliser l'URL du backend directement
+      let avatarUrl;
+      if (process.env.NODE_ENV === 'production') {
+        // En production, utiliser l'URL du backend depuis les variables d'environnement
+        const backendUrl = process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL || 
+                          (req.protocol + '://' + req.get('host'));
+        avatarUrl = `${backendUrl}/uploads/${req.file.filename}`;
+      } else {
+        // En développement, utiliser localhost
+        avatarUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+      }
+      
+      user.avatar = avatarUrl;
+      console.log(`✅ Avatar uploadé: ${avatarUrl}`);
     }
 
     await user.save();
