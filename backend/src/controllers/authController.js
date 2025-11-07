@@ -511,7 +511,6 @@ const updateProfile = async (req, res) => {
       }
       
       // Vérifier que le fichier existe bien
-      const fs = require('fs');
       const filePath = path.join(uploadDir, req.file.filename);
       if (fs.existsSync(filePath)) {
         const stats = fs.statSync(filePath);
