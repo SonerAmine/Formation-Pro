@@ -461,12 +461,19 @@ const updateProfile = async (req, res) => {
     if (req.file) {
       const fs = require('fs');
       const path = require('path');
+      const uploadDir = path.join(__dirname, '../../uploads');
       
       // Supprimer l'ancien avatar s'il existe
       if (user.avatar) {
-        // Si l'avatar est un chemin local, le supprimer
-        if (user.avatar.includes('avatar-') && !user.avatar.startsWith('http')) {
-          const oldAvatarPath = path.join('uploads', user.avatar.replace(/^.*\//, ''));
+        // Extraire le nom du fichier de l'URL (gère les URLs complètes et les chemins relatifs)
+        let oldFilename;
+        if (user.avatar.includes('avatar-')) {
+          // Extraire le nom du fichier (dernier segment après le dernier /)
+          oldFilename = user.avatar.split('/').pop();
+          // Si le nom contient des paramètres de requête, les retirer
+          oldFilename = oldFilename.split('?')[0];
+          
+          const oldAvatarPath = path.join(uploadDir, oldFilename);
           if (fs.existsSync(oldAvatarPath)) {
             try {
               fs.unlinkSync(oldAvatarPath);
@@ -483,8 +490,20 @@ const updateProfile = async (req, res) => {
       let avatarUrl;
       if (process.env.NODE_ENV === 'production') {
         // En production, utiliser l'URL du backend depuis les variables d'environnement
-        const backendUrl = process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL || 
-                          (req.protocol + '://' + req.get('host'));
+        // S'assurer d'utiliser HTTPS
+        let backendUrl = process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL;
+        
+        // Si pas de variable d'environnement, construire depuis la requête
+        if (!backendUrl) {
+          // Utiliser HTTPS en production
+          backendUrl = `https://${req.get('host')}`;
+        }
+        
+        // S'assurer que l'URL utilise HTTPS (pas HTTP)
+        if (backendUrl.startsWith('http://')) {
+          backendUrl = backendUrl.replace('http://', 'https://');
+        }
+        
         avatarUrl = `${backendUrl}/uploads/${req.file.filename}`;
       } else {
         // En développement, utiliser localhost

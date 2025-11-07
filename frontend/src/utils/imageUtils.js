@@ -16,20 +16,35 @@ export const getAvatarUrl = (avatar, genre = 'male') => {
       : '/photos/avatar-male-default.svg';
   }
 
-  // Si c'est déjà une URL complète (http/https), l'utiliser directement
+  // Obtenir l'URL de base de l'API (sans /api)
+  const getBaseUrl = () => {
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    return apiUrl.replace('/api', '');
+  };
+
+  // Si c'est déjà une URL complète (http/https)
   if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+    // Corriger les URLs localhost en production
+    if (avatar.includes('localhost') || avatar.includes('127.0.0.1')) {
+      const baseUrl = getBaseUrl();
+      // Extraire le nom du fichier de l'URL
+      const filename = avatar.split('/').pop();
+      // Reconstruire avec l'URL de production
+      return `${baseUrl}/uploads/${filename}`;
+    }
+    // Utiliser l'URL telle quelle si elle est déjà correcte
     return avatar;
   }
 
   // Si c'est un chemin relatif, construire l'URL complète
   if (avatar.startsWith('/uploads/')) {
-    const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const baseUrl = getBaseUrl();
     return `${baseUrl}${avatar}`;
   }
 
   // Si c'est un nom de fichier avatar, construire l'URL complète
   if (avatar.includes('avatar-')) {
-    const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const baseUrl = getBaseUrl();
     return `${baseUrl}/uploads/${avatar}`;
   }
 
