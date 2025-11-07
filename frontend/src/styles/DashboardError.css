@@ -1,0 +1,28 @@
+/* Dashboard Error Styles */
+.dashboard-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  padding: 40px;
+}
+
+.dashboard-error .error-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.dashboard-error h2 {
+  color: #ef4444;
+  margin: 0 0 12px 0;
+  font-size: 1.5rem;
+}
+
+.dashboard-error p {
+  color: #6b7280;
+  margin: 0 0 24px 0;
+  max-width: 400px;
+}

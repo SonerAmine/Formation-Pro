@@ -1,0 +1,153 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# 📄 Product Requirement Document (PRD) – Plateforme de Réservation de Formations
+
+## 1. 🎯 Objectif
+Créer une plateforme web professionnelle qui permet aux utilisateurs de :
+- Consulter les formations disponibles (description, prix, disponibilité, places restantes).  
+- Réserver une formation en ligne (une seule fois par personne, avec annulation possible).  
+- Ajouter des formations aux favoris.  
+- Commenter et donner leur avis.  
+- Les administrateurs peuvent gérer les formations, utilisateurs, offres spéciales, et bannissements.  
+
+Le design doit être **moderne, animé et professionnel** (React + CSS/animations).
+
+---
+
+## 2. 👤 Types d’utilisateurs
+- **Visiteur (non connecté)** :  
+  Peut consulter les formations, mais doit créer un compte pour réserver/ajouter aux favoris/commenter.
+- **Utilisateur (User)** :  
+  Peut réserver une formation, l’annuler avant la date limite, commenter, ajouter aux favoris.
+- **Administrateur (Admin)** :  
+  Peut ajouter/modifier/supprimer des formations, gérer les utilisateurs (bannir, donner des offres spéciales), suivre les réservations.
+
+---
+
+## 3. ⚙️ Fonctionnalités
+### 3.1. Gestion des formations
+- Ajouter une formation avec : nom, description, prix, nombre de places, durée de réservation.  
+- Vérification automatique : si les places sont épuisées ou la date de réservation passée → message d’erreur.
+
+### 3.2. Réservations
+- L’utilisateur remplit ses infos personnelles (nom, prénom, email, téléphone).  
+- Une seule réservation par utilisateur par formation.  
+- Décrément automatique du nombre de places `places -= 1`.  
+- Possibilité d’annuler avant la date limite.
+
+### 3.3. Comptes et rôles
+- Inscription/Connexion obligatoire pour réserver ou commenter.  
+- Deux rôles :  
+  - **User** : accès normal.  
+  - **Admin** : accès à la gestion (formations, utilisateurs, offres spéciales).
+
+### 3.4. Favoris
+- L’utilisateur peut ajouter des formations en favoris.  
+- Une section "Mes Favoris" affichera toutes les formations préférées.
+
+### 3.5. Commentaires
+- Les utilisateurs peuvent laisser des avis/commentaires sur une formation.
+
+### 3.6. Offres spéciales (Admin)
+- L’admin peut attribuer des avantages (ex : 3 formations gratuites pour un user).
+
+### 3.7. UI/UX
+- Interface responsive.  
+- Animations modernes (React transitions, CSS effects).  
+- Messages clairs pour erreurs et confirmations.  
+
+---
+
+## 4. 🗂️ Structure des fichiers
+
+### 4.1. Frontend (React + CSS)
+```
+/frontend
+  /public
+    index.html
+  /src
+    /components
+      Navbar.jsx
+      Footer.jsx
+      FormInput.jsx
+      Button.jsx
+    /pages
+      Home.jsx
+      FormationList.jsx
+      FormationDetails.jsx
+      Login.jsx
+      Register.jsx
+      Dashboard.jsx        (admin)
+      MyReservations.jsx
+      Favorites.jsx
+    /context
+      AuthContext.js
+    /services
+      api.js              (Appels API vers backend)
+    /styles
+      global.css
+      animations.css
+    App.jsx
+    index.js
+```
+
+### 4.2. Backend (Node.js + Express)
+```
+/backend
+  /src
+    /config
+      db.js               (connexion MongoDB)
+    /models
+      User.js             (schéma utilisateur avec rôle, favoris, réservations)
+      Formation.js        (schéma formations)
+      Reservation.js      (schéma réservation)
+      Comment.js          (schéma commentaires)
+    /controllers
+      authController.js   (login, register, gestion comptes)
+      formationController.js (CRUD formations, disponibilité)
+      reservationController.js (réserver, annuler)
+      commentController.js (ajout, affichage commentaires)
+      adminController.js  (offres spéciales, bannissements)
+    /routes
+      authRoutes.js
+      formationRoutes.js
+      reservationRoutes.js
+      commentRoutes.js
+      adminRoutes.js
+    /middlewares
+      authMiddleware.js   (JWT, vérification rôle user/admin)
+    server.js
+```
+
+### 4.3. Base de données (MongoDB)
+- **User**  
+  - id, nom, prénom, email, téléphone, mot de passe (hashé), rôle (user/admin), favoris, offres spéciales
+- **Formation**  
+  - id, titre, description, prix, places totales, places restantes, date limite
+- **Reservation**  
+  - id, userId, formationId, date réservation, statut (active/annulée)
+- **Comment**  
+  - id, userId, formationId, contenu, date
+
+---
+
+## 5. 🔐 Sécurité
+- Hash mot de passe (bcrypt).  
+- Authentification via JWT.  
+- Middleware pour vérifier les rôles.  
+- Validation des inputs (express-validator).
+
+---
+
+## 6. 🚀 Roadmap de développement
+1. **Setup du projet** : React, Node.js, MongoDB.  
+2. **Authentification** : inscription, login, rôles.  
+3. **Gestion formations** : CRUD admin + affichage public.  
+4. **Réservations** : logique de places restantes + annulation.  
+5. **Favoris + Commentaires**.  
+6. **Offres spéciales Admin**.  
+7. **UI/UX + animations avancées**.  
+8. **Tests et déploiement (Vercel/Netlify pour frontend, Render/Heroku pour backend, MongoDB Atlas pour DB).**
